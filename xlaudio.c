@@ -421,7 +421,7 @@ void xlaudio_init() {
     initClock();
 }
 
-void xlaudio__init_poll(xlaudio_in_enum_t  _audioin,
+void xlaudio_init_poll(xlaudio_in_enum_t  _audioin,
                         xlaudio_sample_process_t _cb
                         ) {
     glbIO = io_poll;
