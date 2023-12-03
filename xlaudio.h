@@ -23,6 +23,7 @@
 
 typedef enum {
     FS_8000_HZ,
+    FS_9600_HZ,
     FS_11025_HZ,
     FS_16000_HZ,
     FS_22050_HZ,
@@ -64,6 +65,13 @@ void xlaudio_init_dma (fs_enum_t          _fs,
                        buflen_enum_t      _pplen,
                        xlaudio_buffer_process_t _cb
                        );
+
+typedef enum {
+    XLAUDIO_DCO,
+    XLAUDIO_XTAL
+} xlaudio_clocksystem_t;
+
+void xlaudio_clocksystem(xlaudio_clocksystem_t s);
 
 void xlaudio_run();
 

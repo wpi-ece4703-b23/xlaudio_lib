@@ -23,6 +23,12 @@ typedef enum {io_poll, io_intr, io_dma} io_enum_t;
 io_enum_t glbIO;
 uint16_t  glbBUFLEN = 0;
 
+xlaudio_clocksystem_t glbClockSystem = XLAUDIO_DCO;
+
+void xlaudio_clocksystem(xlaudio_clocksystem_t s) {
+    glbClockSystem = s;
+}
+
 #define MAXPPLEN 128
 
 enum {PING, PONG};
@@ -89,6 +95,29 @@ void micOff(void) {
 void initAmp(void) {
     GPIO_setAsOutputPin(AUDIO_AMP_EN_PORT, AUDIO_AMP_EN_PIN);
     GPIO_setOutputLowOnPin(AUDIO_AMP_EN_PORT, AUDIO_AMP_EN_PIN);
+}
+
+void initClockXTAL() {
+    // high frequency clock source + prepare system for 48MHz operation
+    GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_PJ, GPIO_PIN3, GPIO_PRIMARY_MODULE_FUNCTION);
+    GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_PJ, GPIO_PIN2, GPIO_PRIMARY_MODULE_FUNCTION);
+
+    GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_PJ, GPIO_PIN0, GPIO_PRIMARY_MODULE_FUNCTION);
+    GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_PJ, GPIO_PIN1, GPIO_PRIMARY_MODULE_FUNCTION);
+
+    CS_setExternalClockSourceFrequency(32000, 48000000);
+
+    PCM_setCoreVoltageLevel(PCM_VCORE1);
+    FlashCtl_setWaitState  (FLASH_BANK0, 2);
+    FlashCtl_setWaitState  (FLASH_BANK1, 2);
+    CS_startHFXT(false);
+    CS_startLFXT(CS_LFXT_DRIVE3);
+
+    CS_initClockSignal(CS_MCLK,   CS_HFXTCLK_SELECT,  CS_CLOCK_DIVIDER_1);
+    CS_initClockSignal(CS_ACLK,   CS_LFXTCLK_SELECT,  CS_CLOCK_DIVIDER_1);
+    CS_initClockSignal(CS_HSMCLK, CS_HFXTCLK_SELECT,  CS_CLOCK_DIVIDER_1);
+    CS_initClockSignal(CS_SMCLK,  CS_HFXTCLK_SELECT,  CS_CLOCK_DIVIDER_1);
+    CS_initClockSignal(CS_BCLK,   CS_LFXTCLK_SELECT,  CS_CLOCK_DIVIDER_1);
 }
 
 void initClock() {
@@ -210,8 +239,9 @@ void blockingerror() {
 Timer_A_PWMConfig glbPWMConfig;
 
 void configureSampleclock(fs_enum_t fs) {
-    uint_fast16_t ccrvalue[8] = {
+    uint_fast16_t ccrvalue[9] = {
           6000,
+          5000,
           4354,
           3000,
           2177,
@@ -418,7 +448,10 @@ void xlaudio_init() {
     errorledinit();
     colorledinit();
     initPushButton();
-    initClock();
+    if (glbClockSystem == XLAUDIO_XTAL)
+        initClockXTAL();
+    else
+        initClock();
 }
 
 void xlaudio_init_poll(xlaudio_in_enum_t  _audioin,
@@ -434,7 +467,10 @@ void xlaudio_init_poll(xlaudio_in_enum_t  _audioin,
     errorledinit();
     colorledinit();
     initPushButton();
-    initClock();
+    if (glbClockSystem == XLAUDIO_XTAL)
+        initClockXTAL();
+    else
+        initClock();
 
     initAmp();
     initMic(_audioin);
@@ -458,7 +494,10 @@ void xlaudio_init_intr(fs_enum_t          _fs,
     errorledinit();
     colorledinit();
     initPushButton();
-    initClock();
+    if (glbClockSystem == XLAUDIO_XTAL)
+        initClockXTAL();
+    else
+        initClock();
 
     initAmp();
     initMic(_audioin);
@@ -484,7 +523,10 @@ void xlaudio_init_dma (fs_enum_t          _fs,
     errorledinit();
     colorledinit();
     initPushButton();
-    initClock();
+    if (glbClockSystem == XLAUDIO_XTAL)
+        initClockXTAL();
+    else
+        initClock();
 
     initAmp();
     initMic(_audioin);
